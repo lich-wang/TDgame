@@ -363,6 +363,19 @@ body {
     left: 100dvw;
     border: none;
     border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body.rotated #game-canvas {
+    aspect-ratio: auto;
+    max-height: none;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+  body.rotated #bottom-panel {
+    flex-shrink: 0;
+    max-height: 25vh;
   }
 }
 
