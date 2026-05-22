@@ -1,0 +1,256 @@
+/* ============================================================
+   霍尔木兹狂想曲 — 样式
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1a1a2e;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  color: #e0d5c1;
+  overflow: hidden;
+}
+
+#game-container {
+  position: relative;
+  width: 960px;
+  height: 720px;
+  background: linear-gradient(180deg, #2d1f0e 0%, #1a1a2e 100%);
+  border: 2px solid #8b7355;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(200, 150, 50, 0.15);
+  overflow: hidden;
+}
+
+#game-canvas {
+  display: block;
+  width: 960px;
+  height: 480px;
+  border-bottom: 1px solid #8b7355;
+}
+
+/* ---- 顶栏 ---- */
+#top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 12px;
+  background: rgba(0,0,0,0.7);
+  font-size: 13px;
+  border-bottom: 1px solid #8b7355;
+}
+#top-bar .stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+#top-bar .stat .icon { font-size: 16px; }
+#top-bar .stat .val { font-weight: 700; color: #f0c050; }
+
+/* ---- 播报条 ---- */
+#news-ticker {
+  height: 28px;
+  line-height: 28px;
+  padding: 0 12px;
+  background: rgba(70,30,30,0.8);
+  font-size: 12px;
+  color: #ff9999;
+  border-bottom: 1px solid #8b7355;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ---- 底部面板 ---- */
+#bottom-panel {
+  height: 176px;
+  padding: 6px 8px;
+  display: flex;
+  gap: 6px;
+  background: rgba(0,0,0,0.5);
+}
+
+/* 塔按钮 */
+.tower-btn {
+  flex: 1;
+  background: rgba(40,35,25,0.9);
+  border: 2px solid #5a4a3a;
+  border-radius: 6px;
+  padding: 6px 4px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 11px;
+  color: #c0b090;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.tower-btn:hover { border-color: #f0c050; color: #f0c050; background: rgba(60,50,30,0.9); }
+.tower-btn.disabled { opacity: 0.4; cursor: not-allowed; border-color: #3a3a3a; }
+.tower-btn.disabled:hover { border-color: #3a3a3a; color: #c0b090; }
+.tower-btn .icon { font-size: 22px; }
+.tower-btn .name { font-weight: 700; }
+.tower-btn .cost { color: #f0c050; font-size: 10px; }
+
+/* 分隔 */
+.divider { width: 2px; background: #5a4a3a; margin: 4px 2px; border-radius: 1px; }
+
+/* 主动出击按钮 */
+.action-btn {
+  flex: 0.7;
+  background: rgba(80,30,30,0.9);
+  border: 2px solid #aa4444;
+  border-radius: 6px;
+  padding: 6px 4px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 10px;
+  color: #ffaaaa;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.action-btn:hover { background: rgba(120,40,40,0.9); color: #ffcccc; }
+.action-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+.action-btn .icon { font-size: 20px; }
+.action-btn .name { font-weight: 700; }
+
+/* 送油轮按钮 */
+.oil-btn {
+  background: rgba(20,50,20,0.9);
+  border-color: #3a7a3a;
+  color: #aaffaa;
+}
+.oil-btn:hover { background: rgba(30,70,30,0.9); color: #ccffcc; }
+
+/* ---- Toast ---- */
+#toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(0,0,0,0.85);
+  color: #f0c050;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#toast.show { opacity: 1; }
+
+/* ---- 弹窗 ---- */
+#modal-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+#modal-overlay.active { display: flex; }
+#modal {
+  background: #2a2218;
+  border: 2px solid #8b7355;
+  border-radius: 10px;
+  padding: 24px 32px;
+  text-align: center;
+  max-width: 420px;
+}
+#modal h2 { font-size: 22px; color: #f0c050; margin-bottom: 12px; }
+#modal p { font-size: 13px; color: #c0b090; margin-bottom: 8px; line-height: 1.6; }
+#modal button {
+  background: #5a4a3a;
+  color: #f0c050;
+  border: 1px solid #f0c050;
+  padding: 8px 28px;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 12px;
+  font-family: inherit;
+}
+#modal button:hover { background: #6a5a4a; }
+
+/* ---- 事件弹窗 ---- */
+#event-popup {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40,20,20,0.95);
+  border: 2px solid #ff6666;
+  border-radius: 10px;
+  padding: 14px 24px;
+  z-index: 150;
+  text-align: center;
+  display: none;
+  animation: eventBounce 0.5s ease;
+}
+#event-popup.active { display: block; }
+#event-popup .event-icon { font-size: 32px; }
+#event-popup .event-title { font-size: 16px; font-weight: 700; color: #ffaaaa; margin: 4px 0; }
+#event-popup .event-desc { font-size: 12px; color: #ff9999; }
+
+@keyframes eventBounce {
+  0% { transform: translateX(-50%) scale(0.7); opacity: 0; }
+  50% { transform: translateX(-50%) scale(1.05); }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ---- 开始按钮 ---- */
+#start-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.8);
+  z-index: 300;
+}
+#start-screen h1 {
+  font-size: 36px;
+  color: #f0c050;
+  margin-bottom: 8px;
+  text-shadow: 0 0 20px rgba(240,192,80,0.4);
+}
+#start-screen .subtitle {
+  font-size: 14px;
+  color: #c0b090;
+  margin-bottom: 24px;
+}
+#start-screen button {
+  font-family: inherit;
+  background: #8b4513;
+  color: #f0c050;
+  border: 2px solid #f0c050;
+  padding: 12px 48px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#start-screen button:hover {
+  background: #a0522d;
+  box-shadow: 0 0 20px rgba(240,192,80,0.3);
+}
