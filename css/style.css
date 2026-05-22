@@ -28,9 +28,6 @@ body {
   position: relative;
   width: 100%;
   max-width: 960px;
-  height: 100vh;
-  height: 100dvh;
-  max-height: 720px;
   background: linear-gradient(180deg, #2d1f0e 0%, #1a1a2e 100%);
   border: 2px solid #8b7355;
   border-radius: 8px;
@@ -38,15 +35,18 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* ============ Canvas ============ */
 #game-canvas {
   display: block;
   width: 100%;
-  flex: 1;
-  min-height: 0;
+  aspect-ratio: 2 / 1;
+  max-height: calc(100vh - 180px);
+  max-height: calc(100dvh - 180px);
   border-bottom: 1px solid #8b7355;
+  object-fit: contain;
 }
 
 /* ============ 顶栏 ============ */
@@ -298,34 +298,46 @@ body {
 
 /* ============ 手机适配 ============ */
 @media (max-width: 600px) {
+  body {
+    padding: 0;
+  }
   #game-container {
-    max-height: none;
-    height: 100vh;
-    height: 100dvh;
+    max-width: 100%;
     border-radius: 0;
     border: none;
+    height: 100vh;
+    height: 100dvh;
+  }
+  #game-canvas {
+    max-height: calc(100vh - 190px);
+    max-height: calc(100dvh - 190px);
   }
   #bottom-panel {
-    padding: 3px 4px;
+    padding: 2px 3px;
     gap: 2px;
+    flex-shrink: 0;
   }
   .tower-btn {
-    min-width: 36px;
-    padding: 3px 1px;
+    min-width: 34px;
+    padding: 2px 1px;
     border-width: 1.5px;
+    border-radius: 4px;
   }
   .action-btn {
-    min-width: 40px;
-    padding: 3px 1px;
+    min-width: 38px;
+    padding: 2px 1px;
+    border-radius: 4px;
   }
   .divider {
-    margin: 3px 0;
+    margin: 2px 0;
   }
   #top-bar {
     padding: 1px 4px;
+    font-size: 10px;
   }
   #news-ticker {
     padding: 1px 4px;
+    font-size: 9px;
   }
 }
 
