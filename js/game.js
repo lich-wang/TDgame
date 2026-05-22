@@ -43,6 +43,22 @@ const game = new class Game {
 
     // 绑定事件
     this._bindEvents();
+    // 竖屏旋转检测
+    this._rotated = false;
+    this._checkRotation();
+    window.addEventListener('resize', () => this._checkRotation());
+    window.addEventListener('orientationchange', () => setTimeout(() => this._checkRotation(), 100));
+  }
+
+  _checkRotation() {
+    const isPortrait = window.innerWidth < 600 && window.innerHeight > window.innerWidth;
+    if (isPortrait) {
+      document.body.classList.add('rotated');
+      this._rotated = true;
+    } else {
+      document.body.classList.remove('rotated');
+      this._rotated = false;
+    }
   }
 
   _bindEvents() {
@@ -507,10 +523,17 @@ const game = new class Game {
   }
 
   _onMouseMove(e) {
-    const sx = this.canvas.width / this.canvas.clientWidth;
-    const sy = this.canvas.height / this.canvas.clientHeight;
-    const mx = e.offsetX * sx;
-    const my = e.offsetY * sy;
+    let mx, my;
+    if (this._rotated) {
+      // 旋转90°后：视觉 offsetX→Canvas y，视觉 offsetY→Canvas x(反向)
+      mx = MAP.WIDTH * (1 - e.offsetY / this.canvas.clientHeight);
+      my = MAP.HEIGHT * (e.offsetX / this.canvas.clientWidth);
+    } else {
+      const sx = this.canvas.width / this.canvas.clientWidth;
+      const sy = this.canvas.height / this.canvas.clientHeight;
+      mx = e.offsetX * sx;
+      my = e.offsetY * sy;
+    }
     this.mouseX = mx;
     this.mouseY = my;
 
@@ -569,10 +592,16 @@ const game = new class Game {
   }
 
   _onClick(e) {
-    const sx = this.canvas.width / this.canvas.clientWidth;
-    const sy = this.canvas.height / this.canvas.clientHeight;
-    const mx = e.offsetX * sx;
-    const my = e.offsetY * sy;
+    let mx, my;
+    if (this._rotated) {
+      mx = MAP.WIDTH * (1 - e.offsetY / this.canvas.clientHeight);
+      my = MAP.HEIGHT * (e.offsetX / this.canvas.clientWidth);
+    } else {
+      const sx = this.canvas.width / this.canvas.clientWidth;
+      const sy = this.canvas.height / this.canvas.clientHeight;
+      mx = e.offsetX * sx;
+      my = e.offsetY * sy;
+    }
 
     // 点击水雷槽位 → 自动选铁罐头
     if (this._lastHoverMineSlot && !this._lastHoverMineSlot.occupied) {
