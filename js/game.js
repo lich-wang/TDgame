@@ -565,29 +565,31 @@ const game = new class Game {
     // 放置预览（防御塔位 + 水雷槽位）
     this._lastHoverSlot = null;
     this._lastHoverMineSlot = null;
+
+    // 始终检测普通塔位悬停（未选塔时也能悬停，方便点击自动选塔）
+    let closestTowerDist = 24;
+    for (const slot of MAP.TOWER_SLOTS) {
+      if (slot.occupied) continue;
+      const d = Math.hypot(slot.x - mx, slot.y - my);
+      if (d < closestTowerDist) {
+        closestTowerDist = d;
+        this._lastHoverSlot = slot;
+      }
+    }
+    // 始终检测水雷槽位
+    for (const slot of MAP.MINE_SLOTS) {
+      if (slot.occupied) continue;
+      if (Math.hypot(slot.x - mx, slot.y - my) < 24) {
+        this._lastHoverMineSlot = slot;
+        break;
+      }
+    }
+
     if (this.selectedTowerType) {
-      let closestDist = 24;
-      // 水雷类型 → 只看水雷槽位
-      const slotPool = this.selectedTowerType === 'mine' ? MAP.MINE_SLOTS : MAP.TOWER_SLOTS;
-      for (const slot of slotPool) {
-        if (slot.occupied) continue;
-        const d = Math.hypot(slot.x - mx, slot.y - my);
-        if (d < closestDist) {
-          closestDist = d;
-          this._lastHoverSlot = slot;
-        }
-      }
-      this.canvas.style.cursor = this._lastHoverSlot ? 'crosshair' : 'default';
+      const validSlot = this.selectedTowerType === 'mine' ? this._lastHoverMineSlot : this._lastHoverSlot;
+      this.canvas.style.cursor = validSlot ? 'crosshair' : 'default';
     } else {
-      // 未选塔 → 也检测水雷槽位悬停
-      for (const slot of MAP.MINE_SLOTS) {
-        if (slot.occupied) continue;
-        if (Math.hypot(slot.x - mx, slot.y - my) < 24) {
-          this._lastHoverMineSlot = slot;
-          break;
-        }
-      }
-      this.canvas.style.cursor = (this._lastHoverMineSlot || this.hoveredTower) ? 'pointer' : 'default';
+      this.canvas.style.cursor = (this._lastHoverSlot || this._lastHoverMineSlot || this.hoveredTower) ? 'pointer' : 'default';
     }
   }
 
