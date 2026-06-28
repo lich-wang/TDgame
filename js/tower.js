@@ -273,6 +273,229 @@ class Tower {
   }
 }
 
+class Minelayer {
+  constructor(slot) {
+    this.type = 'mine';
+    this.cfg = TOWER_TYPES.mine;
+    this.level = 0;
+    this.slot = slot;
+    this.width = 54;
+    this.height = 28;
+
+    const lv = this.getLevelData();
+    this.maxHp = lv.hp || 70;
+    this.hp = this.maxHp;
+    this.dmg = lv.dmg || 30;
+    this.range = lv.range || 0;
+    this.speed = lv.speed || 0.9;
+    this.name = lv.name || this.cfg.name;
+    this.maxMines = lv.mineCount || 3;
+    this.minesPlaced = [];
+
+    this.routeForward = true;
+    this.routeStart = this._pointOnRoute(-82, 28);
+    this.routeEnd = this._pointOnRoute(82, -20);
+    this.x = this.routeStart.x - this.width / 2;
+    this.y = this.routeStart.y - this.height / 2;
+    this.mineTimer = 0.2;
+    this.mineInterval = 1.35;
+    this.hitFlash = 0;
+    this.alive = true;
+    this.destroyed = false;
+    this.status = '出航';
+  }
+
+  getLevelData() {
+    return this.cfg.levels[this.level];
+  }
+
+  _pointOnRoute(along, across) {
+    const nx = -MAP.PATH_DY;
+    const ny = MAP.PATH_DX;
+    return {
+      x: this.slot.x + MAP.PATH_DX * along + nx * across,
+      y: this.slot.y + MAP.PATH_DY * along + ny * across,
+    };
+  }
+
+  get centerX() {
+    return this.x + this.width / 2;
+  }
+
+  get centerY() {
+    return this.y + this.height / 2;
+  }
+
+  distTo(x, y) {
+    return Math.hypot(this.centerX - x, this.centerY - y);
+  }
+
+  update(dt, enemies, projectiles) {
+    if (!this.alive) return;
+    if (this.hitFlash > 0) this.hitFlash -= dt;
+
+    this._move(dt);
+    this.mineTimer -= dt;
+    if (this.mineTimer <= 0 && this.minesPlaced.length < this.maxMines) {
+      this.mineTimer = this.mineInterval;
+      this.layMine();
+    }
+    this._checkMines(enemies, projectiles);
+  }
+
+  _move(dt) {
+    const target = this.routeForward ? this.routeEnd : this.routeStart;
+    const tx = target.x - this.width / 2;
+    const ty = target.y - this.height / 2;
+    const dx = tx - this.x;
+    const dy = ty - this.y;
+    const dist = Math.hypot(dx, dy);
+    const step = this.speed * 44 * dt;
+
+    if (dist <= step) {
+      this.x = tx;
+      this.y = ty;
+      this.routeForward = !this.routeForward;
+      this.status = this.minesPlaced.length >= this.maxMines ? '巡航警戒' : '转向布雷';
+      return;
+    }
+
+    this.x += (dx / dist) * step;
+    this.y += (dy / dist) * step;
+    this.status = this.minesPlaced.length >= this.maxMines ? '巡航警戒' : '布雷中';
+  }
+
+  layMine() {
+    if (!this.alive || this.minesPlaced.length >= this.maxMines) return false;
+    const lv = this.getLevelData();
+    const wakeBack = this.routeForward ? -18 : 18;
+    const drift = (this.minesPlaced.length % 2 === 0 ? 1 : -1) * 8;
+    const nx = -MAP.PATH_DY;
+    const ny = MAP.PATH_DX;
+    const mine = {
+      x: this.centerX + MAP.PATH_DX * wakeBack + nx * drift,
+      y: this.centerY + MAP.PATH_DY * wakeBack + ny * drift,
+      dmg: this.dmg,
+      range: lv.magnetic ? this.range : 0,
+      active: true,
+    };
+    this.minesPlaced.push(mine);
+    this.status = '投放水雷';
+    return true;
+  }
+
+  _checkMines(enemies, projectiles) {
+    for (const mine of this.minesPlaced) {
+      if (!mine.active) continue;
+      for (const enemy of enemies) {
+        if (!enemy.alive || enemy.air) continue;
+        const d = enemy.distTo(mine.x, mine.y);
+        const triggerRange = mine.range > 0 ? mine.range : 25;
+        if (d < triggerRange) {
+          mine.active = false;
+          enemy.takeDamage(mine.dmg);
+          projectiles.push(new ExplosionEffect(mine.x, mine.y, 24));
+          break;
+        }
+      }
+    }
+    this.minesPlaced = this.minesPlaced.filter(mine => mine.active);
+  }
+
+  takeDamage(dmg) {
+    if (!this.alive) return false;
+    this.hp -= dmg;
+    this.hitFlash = 0.18;
+    this.status = '遭攻击';
+    if (this.hp <= 0) {
+      this.hp = 0;
+      this.alive = false;
+      this.destroyed = true;
+      this.slot.occupied = false;
+      this.status = '被击毁';
+      return true;
+    }
+    return false;
+  }
+
+  drawMines(ctx) {
+    for (const mine of this.minesPlaced) {
+      ctx.save();
+      const drewMine = GAME_SPRITES.drawProjectile(ctx, 'mine', mine.x, mine.y, 12, 0);
+      if (!drewMine) {
+        ctx.beginPath();
+        ctx.arc(mine.x, mine.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#20252a';
+        ctx.fill();
+        ctx.strokeStyle = '#d7b56a';
+        ctx.stroke();
+      }
+      if (mine.range > 0) {
+        ctx.beginPath();
+        ctx.arc(mine.x, mine.y, mine.range, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(230,70,60,0.18)';
+        ctx.setLineDash([2, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    }
+  }
+
+  draw(ctx) {
+    if (!this.alive) return;
+    ctx.save();
+    if (this.hitFlash > 0) ctx.globalAlpha = 0.62;
+
+    const cx = this.centerX;
+    const cy = this.centerY;
+    const angle = Math.atan2(MAP.PATH_DY, MAP.PATH_DX) + (this.routeForward ? 0 : Math.PI);
+
+    ctx.save();
+    ctx.translate(cx, cy + 12);
+    ctx.rotate(angle);
+    ctx.fillStyle = 'rgba(0,0,0,0.26)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 28, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const drewBoat = GAME_SPRITES.drawTower(ctx, 'mine', this.level, cx, cy + 7, { angle, scale: 0.62 });
+    if (!drewBoat) {
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#52636b';
+      ctx.strokeStyle = '#1e2a31';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(28, 0);
+      ctx.lineTo(14, -10);
+      ctx.lineTo(-24, -8);
+      ctx.lineTo(-30, 0);
+      ctx.lineTo(-24, 8);
+      ctx.lineTo(14, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#b6c2c8';
+      ctx.fillRect(-2, -7, 16, 14);
+    }
+    ctx.restore();
+
+    ctx.save();
+    const hpPct = Math.max(0, this.hp / this.maxHp);
+    ctx.fillStyle = 'rgba(4,8,12,0.72)';
+    ctx.fillRect(cx - 24, cy - 24, 48, 5);
+    ctx.fillStyle = hpPct > 0.45 ? '#70d090' : '#e06a5a';
+    ctx.fillRect(cx - 24, cy - 24, 48 * hpPct, 5);
+    ctx.fillStyle = '#d8ecf2';
+    ctx.font = '9px "Noto Sans SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${this.minesPlaced.length}/${this.maxMines}`, cx, cy + 25);
+    ctx.restore();
+  }
+}
+
 // 爆炸特效
 class ExplosionEffect {
   constructor(x, y, radius) {

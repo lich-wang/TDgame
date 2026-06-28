@@ -40,14 +40,14 @@ const TOWER_TYPES = {
     projectile: { color: '#aaaacc', size: 3, speed: 4, spriteKey: 'drone' },
   },
   mine: {
-    name: '铁罐头',
-    desc: '水雷',
-    icon: '🥫',
+    name: '布雷艇',
+    desc: '移动布雷艇，会出航布雷且可能被敌舰击毁',
+    icon: '⛴️',
     cost: 30,
     levels: [
-      { dmg: 30, range: 0, name: '铁罐头 I', contact: true },
-      { dmg: 50, range: 60, name: '铁罐头 II（磁性）', contact: true, magnetic: true },
-      { dmg: 70, range: 80, name: '铁罐头 III（智能）', contact: true, smart: true },
+      { dmg: 30, range: 0, name: '布雷艇 I', contact: true, hp: 70, speed: 0.9, mineCount: 3 },
+      { dmg: 50, range: 60, name: '布雷艇 II（磁性水雷）', contact: true, magnetic: true, hp: 95, speed: 1.0, mineCount: 4 },
+      { dmg: 70, range: 80, name: '布雷艇 III（智能水雷）', contact: true, smart: true, hp: 120, speed: 1.1, mineCount: 5 },
     ],
     projectile: { color: '#333', size: 8, speed: 0, spriteKey: 'mine' },
   },
@@ -313,6 +313,7 @@ MAP.MINE_SLOTS = [];  // 水道中的水雷专用槽位
     MAP.MINE_SLOTS.push({
       x: MAP.PATH_START_X + (MAP.PATH_END_X - MAP.PATH_START_X) * t,
       y: MAP.PATH_START_Y + (MAP.PATH_END_Y - MAP.PATH_START_Y) * t,
+      t,
       occupied: false,
       id: `mine_${i}`,
     });

@@ -33,8 +33,12 @@ function updateUI(game) {
       const tCfg = TOWER_TYPES[game.selectedTowerType];
       const cost = Math.floor(tCfg.cost * eco.getInflationMultiplier());
       selectedEl.textContent = `${tCfg.icon} ${tCfg.name} ¥${cost}`;
+    } else if (game.hoveredMinelayer) {
+      selectedEl.textContent = `${game.hoveredMinelayer.cfg.icon} ${game.hoveredMinelayer.status}`;
     } else if (game.hoveredTower) {
       selectedEl.textContent = `${game.hoveredTower.cfg.icon} ${game.hoveredTower.name}`;
+    } else if (game.minelayers && game.minelayers.length > 0) {
+      selectedEl.textContent = `⛴️ 布雷艇 ${game.minelayers.length}`;
     } else {
       selectedEl.textContent = '待命';
     }

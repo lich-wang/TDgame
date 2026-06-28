@@ -33,6 +33,7 @@ class Enemy {
 
     // 航母专属计时器
     this.spawnTimer = 0;
+    this.attackCooldown = 0;
     // 被高亮（雷达反隐）
     this.revealed = false;
 
@@ -92,6 +93,47 @@ class Enemy {
     if (this.shoreAttack && towers.length > 0) {
       // 不在 update 中处理攻击，由 game 处理
     }
+
+    this._attackMinelayers(dt, game);
+  }
+
+  _attackMinelayers(dt, game) {
+    if (this.air || this.landUnit || !game.minelayers || game.minelayers.length === 0) return;
+    if (this.attackCooldown > 0) {
+      this.attackCooldown -= dt;
+      return;
+    }
+
+    const attackRange = this.type === 'carrier' ? 210 : this.type === 'cruiser' ? 180 : this.type === 'destroyer' ? 155 : 120;
+    let target = null;
+    let bestDist = Infinity;
+
+    for (const minelayer of game.minelayers) {
+      if (!minelayer.alive) continue;
+      const d = minelayer.distTo(this.x + this.width / 2, this.y + this.height / 2);
+      if (d < attackRange && d < bestDist) {
+        target = minelayer;
+        bestDist = d;
+      }
+    }
+
+    if (!target) return;
+
+    const dmg = Math.max(4, Math.round(this.dmg * 1.2));
+    game.projectiles.push(new Projectile(
+      this.x + this.width * 0.38,
+      this.y + this.height * 0.35,
+      target,
+      dmg,
+      {
+        color: '#ffd28a',
+        size: this.type === 'carrier' || this.type === 'cruiser' ? 5 : 4,
+        speed: 7,
+        spriteKey: 'shell',
+        trail: false,
+      }
+    ));
+    this.attackCooldown = this.type === 'carrier' ? 1.3 : this.type === 'cruiser' ? 1.6 : 1.9;
   }
 
   takeDamage(dmg) {

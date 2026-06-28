@@ -57,12 +57,13 @@ const GAME_SPRITES = (() => {
     return true;
   }
 
-  function drawTower(ctx, type, level, x, y) {
-    const scale = type === 'mine' ? 0.72 : type === 'radar' ? 0.82 : 0.78;
+  function drawTower(ctx, type, level, x, y, options = {}) {
+    const baseScale = type === 'mine' ? 0.72 : type === 'radar' ? 0.82 : 0.78;
+    const scale = options.scale || baseScale;
     const w = 96 * scale;
     const h = 96 * scale;
     const bob = Math.sin(Date.now() / 500 + level) * 1.2;
-    return drawFrame(ctx, sheets.towers, towerFrames[type], 96, 96, x, y - 14 + bob, w, h);
+    return drawFrame(ctx, sheets.towers, towerFrames[type], 96, 96, x, y - 14 + bob, w, h, options.angle || 0);
   }
 
   function drawEnemy(ctx, type, x, y, w, h, options = {}) {

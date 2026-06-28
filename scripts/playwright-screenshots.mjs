@@ -49,11 +49,11 @@ async function scenario(page) {
       ['missile', MAP.TOWER_SLOTS[3]],
       ['radar', MAP.TOWER_SLOTS[5]],
       ['aa', MAP.TOWER_SLOTS[7]],
-      ['mine', MAP.MINE_SLOTS[3]],
     ];
     for (const [type, slot] of placements) {
       if (!slot.occupied) game._placeTower(type, slot);
     }
+    game._placeMinelayer(MAP.MINE_SLOTS[3]);
     game.enemies = [];
     game.projectiles = [];
     game.currentWave = 6;
@@ -66,6 +66,19 @@ async function scenario(page) {
       enemy.x = 760 - index * 130;
       enemy.y += index * 18;
     });
+    if (game.minelayers[0]) {
+      const boat = game.minelayers[0];
+      boat.x = 520;
+      boat.y = 285;
+      boat.mineTimer = 0;
+      boat.layMine();
+      if (game.enemies[1]) {
+        game.enemies[1].x = 570;
+        game.enemies[1].y = 260;
+        game.enemies[1].attackCooldown = 0;
+        game.enemies[1]._attackMinelayers(0.2, game);
+      }
+    }
     if (game.enemies[0]) {
       game.projectiles.push(new Projectile(420, 150, game.enemies[0], 10, {
         speed: 5,

@@ -130,13 +130,19 @@ includesAll(gameJs, [
   '_placeTower',
   '_lastHoverMineSlot',
   "this.selectedTowerType === 'mine'",
+  'this.minelayers',
+  'new Minelayer',
 ], 'js/game.js');
 
 check(
-  gameJs.includes('this._placeTower(this.selectedTowerType, this._lastHoverMineSlot)') ||
-    gameJs.includes('this._placeTower(\'mine\', this._lastHoverMineSlot)') ||
-    gameJs.includes('this._placeTower("mine", this._lastHoverMineSlot)'),
-  'js/game.js must place mines through _lastHoverMineSlot'
+  gameJs.includes('this._placeMinelayer') && gameJs.includes('this._lastHoverMineSlot'),
+  'js/game.js must place minelayers through _lastHoverMineSlot'
+);
+
+check(
+  !gameJs.includes("new Tower(typeKey, slot);\n    this.towers.push(tower);") ||
+    gameJs.includes("if (typeKey === 'mine')"),
+  'js/game.js must not create static Tower instances for mine deployments'
 );
 
 includesAll(uiJs, [
@@ -150,21 +156,36 @@ includesAll(mapJs, [
   'drawImage',
 ], 'js/map.js');
 
+for (const forbidden of [
+  'laneGrad',
+  '舰队方向箭头',
+  "fillText('波斯'",
+  '鹰酱第五舰队基地',
+]) {
+  check(!mapJs.includes(forbidden), `js/map.js must remove extra prototype overlay: ${forbidden}`);
+}
+
 includesAll(dataJs, [
   'PATH_START_Y = 170',
   'PATH_END_Y   = 382',
   'const towerSlotCoords',
   '[65, 172]',
   '[865, 104]',
+  "name: '布雷艇'",
 ], 'js/data.js');
 
 includesAll(towerJs, [
   'GAME_SPRITES.drawTower',
   'GAME_SPRITES.drawProjectile',
+  'class Minelayer',
+  'takeDamage(dmg)',
+  'layMine',
 ], 'js/tower.js');
 
 includesAll(enemyJs, [
   'GAME_SPRITES.drawEnemy',
+  '_attackMinelayers',
+  'game.minelayers',
 ], 'js/enemy.js');
 
 includesAll(projectileJs, [

@@ -8,6 +8,7 @@ const game = new class Game {
     this.ctx = this.canvas.getContext('2d');
     this.economy = new Economy();
     this.towers = [];
+    this.minelayers = [];
     this.enemies = [];
     this.projectiles = [];
     this.oilTankers = [];
@@ -23,6 +24,7 @@ const game = new class Game {
 
     this.selectedTowerType = null;
     this.hoveredTower = null;
+    this.hoveredMinelayer = null;
     this.lastTime = 0;
 
     // 油轮计时器
@@ -90,6 +92,7 @@ const game = new class Game {
     document.getElementById('start-screen').style.display = 'none';
     this.economy.reset();
     this.towers = [];
+    this.minelayers = [];
     this.enemies = [];
     this.projectiles = [];
     this.oilTankers = [];
@@ -106,6 +109,7 @@ const game = new class Game {
     }
     this.selectedTowerType = null;
     this.hoveredTower = null;
+    this.hoveredMinelayer = null;
     this.state = 'playing';
     this.lastTime = performance.now();
 
@@ -185,6 +189,11 @@ const game = new class Game {
       enemy.update(dt, this.towers, this);
     }
 
+    // 更新布雷艇
+    for (const minelayer of this.minelayers) {
+      minelayer.update(dt, this.enemies, this.projectiles);
+    }
+
     // 更新塔
     for (const tower of this.towers) {
       tower.update(dt, this.enemies, this.projectiles);
@@ -222,6 +231,13 @@ const game = new class Game {
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
       if (!this.projectiles[i].alive) {
         this.projectiles.splice(i, 1);
+      }
+    }
+
+    // 清理被击毁布雷艇
+    for (let i = this.minelayers.length - 1; i >= 0; i--) {
+      if (!this.minelayers[i].alive) {
+        this.minelayers.splice(i, 1);
       }
     }
 
@@ -275,6 +291,19 @@ const game = new class Game {
       tanker.draw(ctx);
     }
 
+    // 绘制水雷
+    for (const tower of this.towers) {
+      tower.drawMines(ctx);
+    }
+    for (const minelayer of this.minelayers) {
+      minelayer.drawMines(ctx);
+    }
+
+    // 绘制布雷艇
+    for (const minelayer of this.minelayers) {
+      minelayer.draw(ctx);
+    }
+
     // 绘制敌人
     for (const enemy of this.enemies) {
       enemy.draw(ctx);
@@ -283,11 +312,6 @@ const game = new class Game {
     // 绘制投影物
     for (const proj of this.projectiles) {
       proj.draw(ctx);
-    }
-
-    // 绘制水雷
-    for (const tower of this.towers) {
-      tower.drawMines(ctx);
     }
 
     // 绘制塔
@@ -314,10 +338,14 @@ const game = new class Game {
         ctx.setLineDash([3, 3]);
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.font = '20px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(tCfg.icon, s.x, s.y);
+        if (isMine) {
+          GAME_SPRITES.drawTower(ctx, 'mine', 0, s.x, s.y + 5, { scale: 0.5 });
+        } else {
+          ctx.font = '20px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tCfg.icon, s.x, s.y);
+        }
         ctx.restore();
       }
     }
@@ -384,8 +412,59 @@ const game = new class Game {
       ctx.restore();
     }
 
+    // === 布雷艇悬停 tooltip ===
+    if (this.hoveredMinelayer && this.mouseX != null && !this.hoveredTower) {
+      const m = this.hoveredMinelayer;
+      const lines = [
+        `${m.cfg.icon} ${m.name}`,
+        `生命 ${Math.ceil(m.hp)}/${m.maxHp}`,
+        `状态 ${m.status}`,
+        `水雷 ${m.minesPlaced.length}/${m.maxMines}`,
+      ];
+
+      const fontSize = 11;
+      const lineH = 15;
+      const padX = 8;
+      const padY = 6;
+      const tw = lines.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0) + padX * 2;
+      const twReal = Math.max(tw, 140);
+      const th = lines.length * lineH + padY * 2;
+      let tx = this.mouseX + 18;
+      let ty = this.mouseY - th - 8;
+      if (tx + twReal > MAP.WIDTH) tx = this.mouseX - twReal - 18;
+      if (ty < 0) ty = this.mouseY + 18;
+
+      ctx.save();
+      ctx.font = `${fontSize}px "Noto Sans SC", sans-serif`;
+      ctx.fillStyle = 'rgba(8,24,30,0.92)';
+      ctx.strokeStyle = '#55cde6';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      const r = 5;
+      ctx.moveTo(tx + r, ty);
+      ctx.lineTo(tx + twReal - r, ty);
+      ctx.arcTo(tx + twReal, ty, tx + twReal, ty + r, r);
+      ctx.lineTo(tx + twReal, ty + th - r);
+      ctx.arcTo(tx + twReal, ty + th, tx + twReal - r, ty + th, r);
+      ctx.lineTo(tx + r, ty + th);
+      ctx.arcTo(tx, ty + th, tx, ty + th - r, r);
+      ctx.lineTo(tx, ty + r);
+      ctx.arcTo(tx, ty, tx + r, ty, r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#c7f6ff';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      lines.forEach((line, i) => {
+        ctx.fillText(line, tx + padX, ty + padY + i * lineH);
+      });
+      ctx.restore();
+    }
+
     // === 敌人悬停 tooltip ===
-    if (this.hoveredEnemy && this.mouseX != null && !this.hoveredTower) {
+    if (this.hoveredEnemy && this.mouseX != null && !this.hoveredTower && !this.hoveredMinelayer) {
       const e = this.hoveredEnemy;
       const lines = [
         `${e.icon} ${e.name}`,
@@ -538,6 +617,9 @@ const game = new class Game {
 
   _placeTower(typeKey, slot) {
     if (!typeKey || !slot || slot.occupied) return false;
+    if (typeKey === 'mine') {
+      return this._placeMinelayer(slot);
+    }
     const cost = Math.floor(TOWER_TYPES[typeKey].cost * this.economy.getInflationMultiplier());
     if (!this.economy.spend(cost)) {
       this.showToast('绿纸不足！');
@@ -552,6 +634,23 @@ const game = new class Game {
     return true;
   }
 
+  _placeMinelayer(slot) {
+    if (!slot || slot.occupied) return false;
+    const cost = Math.floor(TOWER_TYPES.mine.cost * this.economy.getInflationMultiplier());
+    if (!this.economy.spend(cost)) {
+      this.showToast('绿纸不足！');
+      this.selectedTowerType = null;
+      return false;
+    }
+    slot.occupied = true;
+    const minelayer = new Minelayer(slot);
+    this.minelayers.push(minelayer);
+    this.showToast(`布雷艇出航：${minelayer.name}`);
+    this.selectedTowerType = null;
+    this.setNews('📋 布雷艇已进入水道，会移动布雷；敌舰靠近时可能攻击它');
+    return true;
+  }
+
   selectTowerType(typeKey) {
     if (this.state !== 'playing') return;
     const cost = Math.floor(TOWER_TYPES[typeKey].cost * this.economy.getInflationMultiplier());
@@ -563,7 +662,10 @@ const game = new class Game {
     // 在播报条显示当前选中设施说明
     if (this.selectedTowerType) {
       const tCfg = TOWER_TYPES[this.selectedTowerType];
-      this.setNews(`📋 ${tCfg.icon} ${tCfg.name}：${tCfg.desc} | 射程${tCfg.levels[0].range} | 点击空塔位放置 | 右键取消`);
+      const hint = this.selectedTowerType === 'mine'
+        ? '点击蓝色水道槽位派出布雷艇'
+        : `射程${tCfg.levels[0].range} | 点击空塔位放置`;
+      this.setNews(`📋 ${tCfg.icon} ${tCfg.name}：${tCfg.desc} | ${hint} | 右键取消`);
     }
   }
 
@@ -582,9 +684,22 @@ const game = new class Game {
       }
     }
 
+    // 悬停布雷艇
+    this.hoveredMinelayer = null;
+    if (!this.hoveredTower) {
+      for (const minelayer of this.minelayers) {
+        if (!minelayer.alive) continue;
+        const d = Math.hypot(minelayer.centerX - mx, minelayer.centerY - my);
+        if (d < 28) {
+          this.hoveredMinelayer = minelayer;
+          break;
+        }
+      }
+    }
+
     // 悬停敌人
     this.hoveredEnemy = null;
-    if (!this.hoveredTower) {
+    if (!this.hoveredTower && !this.hoveredMinelayer) {
       for (const enemy of this.enemies) {
         if (!enemy.alive) continue;
         const ex = enemy.x + enemy.width / 2;
@@ -624,28 +739,28 @@ const game = new class Game {
       const validSlot = this.selectedTowerType === 'mine' ? this._lastHoverMineSlot : this._lastHoverSlot;
       this.canvas.style.cursor = validSlot ? 'crosshair' : 'default';
     } else {
-      this.canvas.style.cursor = (this._lastHoverSlot || this._lastHoverMineSlot || this.hoveredTower) ? 'pointer' : 'default';
+      this.canvas.style.cursor = (this._lastHoverSlot || this._lastHoverMineSlot || this.hoveredTower || this.hoveredMinelayer) ? 'pointer' : 'default';
     }
   }
 
   _onClick(e) {
     this._onMouseMove(e);
 
-    // 点击水雷槽位 → 自动选铁罐头
+    // 点击水雷槽位 → 自动选布雷艇
     if (this._lastHoverMineSlot && !this._lastHoverMineSlot.occupied) {
       if (this.selectedTowerType === 'mine') {
-        this._placeTower(this.selectedTowerType, this._lastHoverMineSlot);
+        this._placeMinelayer(this._lastHoverMineSlot);
         return;
       }
       if (!this.selectedTowerType) {
         const cost = Math.floor(TOWER_TYPES.mine.cost * this.economy.getInflationMultiplier());
         if (this.economy.money < cost) {
-          this.showToast('绿纸不足，买不了铁罐头！');
+          this.showToast('绿纸不足，派不了布雷艇！');
           return;
         }
         this.selectedTowerType = 'mine';
-        this.showToast('已选 🥫 铁罐头（水雷），再点水中蓝色槽位放置');
-        this.setNews('📋 🥫 铁罐头：水雷 | 触碰引爆 | 点击蓝色水道槽位放置 | 右键取消');
+        this.showToast('已选 ⛴️ 布雷艇，再点蓝色水道槽位派出');
+        this.setNews('📋 ⛴️ 布雷艇：移动布雷 | 敌舰可攻击 | 点击蓝色水道槽位派出 | 右键取消');
         return;
       }
     }
@@ -667,7 +782,7 @@ const game = new class Game {
       }
 
       if (this.selectedTowerType === 'mine') {
-        this.showToast('铁罐头只能部署在蓝色水雷槽位');
+        this.showToast('布雷艇只能从蓝色水道槽位派出');
         return;
       }
       this._placeTower(this.selectedTowerType, this._lastHoverSlot);
