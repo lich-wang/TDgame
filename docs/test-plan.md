@@ -30,7 +30,7 @@
 - 图片尺寸必须足够承担 UI 背景：首屏背景宽度至少 1200px，战场底图宽度至少 960px。
 - HTML/CSS/JS 必须引用这些资产，防止图片生成后没有实际接入。
 - spritesheet 必须带 alpha 通道，避免用矩形底色盖住战场背景。
-- 建筑 spritesheet 必须包含半写实岸防设施和布雷艇帧，不允许只把水雷作为静态塔图标。
+- 建筑 spritesheet 必须包含半写实岸防设施和布雷艇帧，不允许只把水雷作为静态塔图标，也不允许继续使用上一版 flat/vector 程序绘制建筑。
 
 ### JS 语法
 
@@ -48,6 +48,8 @@
 - `map.js` 在背景图加载成功的主要路径中不得保留粗 `laneGrad` 航道带、舰队方向箭头、旗帜和基地牌等额外绘制。
 - `tower.js`、`enemy.js`、`projectile.js` 必须通过 sprite helper 绘制 PNG，而不是只用 Canvas 几何图形和 emoji。
 - `data.js` 中塔位和航道坐标必须匹配文档中的背景坐标。
+- `data.js` 中塔位必须使用 11 个背景平台坐标，不得保留旧的 8 个直线排布坐标。
+- 静态测试必须解析 `towerSlotCoords`，检查塔位数量、关键坐标、非直线排布，以及所有塔位都位于 `MAP.WATER_TOP` 以上。
 - `data.js` 中 `mine` 的展示名称必须是布雷艇，描述必须表达移动布雷。
 
 ### Playwright 视觉验收

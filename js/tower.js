@@ -228,16 +228,6 @@ class Tower {
       ctx.fillText(icon, this.x, this.y - 1);
     }
 
-    // 等级标记
-    ctx.font = '9px sans-serif';
-    ctx.fillStyle = '#f0c050';
-    ctx.fillText('★'.repeat(this.level + 1), this.x, this.y + size + 10);
-
-    // 水雷数
-    if (this.isMine) {
-      ctx.fillText(`🥫×${this.minesPlaced.length}/${this.maxMines}`, this.x, this.y + size + 20);
-    }
-
     ctx.restore();
   }
 

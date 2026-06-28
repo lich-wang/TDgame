@@ -44,11 +44,14 @@ async function scenario(page) {
       clearTimeout(game._prepTimer);
       game._prepTimer = null;
     }
+    game.economy.money = 2000;
     const placements = [
-      ['cannon', MAP.TOWER_SLOTS[1]],
-      ['missile', MAP.TOWER_SLOTS[3]],
-      ['radar', MAP.TOWER_SLOTS[5]],
-      ['aa', MAP.TOWER_SLOTS[7]],
+      ['cannon', MAP.TOWER_SLOTS[0]],
+      ['missile', MAP.TOWER_SLOTS[2]],
+      ['drone', MAP.TOWER_SLOTS[4]],
+      ['radar', MAP.TOWER_SLOTS[6]],
+      ['aa', MAP.TOWER_SLOTS[8]],
+      ['cannon', MAP.TOWER_SLOTS[10]],
     ];
     for (const [type, slot] of placements) {
       if (!slot.occupied) game._placeTower(type, slot);
