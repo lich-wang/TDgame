@@ -25,9 +25,11 @@
 ### 图片资产
 
 - 必须存在 `assets/hero-command.png` 和 `assets/battlefield-hormuz.png`。
+- 必须存在 `assets/sprites/towers.png`、`assets/sprites/enemies.png`、`assets/sprites/projectiles.png`。
 - 图片必须是 PNG 或 WebP 位图文件，不允许用 SVG 代替。
 - 图片尺寸必须足够承担 UI 背景：首屏背景宽度至少 1200px，战场底图宽度至少 960px。
 - HTML/CSS/JS 必须引用这些资产，防止图片生成后没有实际接入。
+- spritesheet 必须带 alpha 通道，避免用矩形底色盖住战场背景。
 
 ### JS 语法
 
@@ -39,6 +41,15 @@
 - 水雷放置逻辑必须显式使用 `_lastHoverMineSlot` 创建 `Tower('mine', slot)`。
 - UI 更新必须写入 `condition-display`、`selected-display`、`wave-progress`。
 - `map.js` 必须预加载并绘制 `battlefield-hormuz.png`，且图片未加载时保留 Canvas 绘制兜底。
+- `tower.js`、`enemy.js`、`projectile.js` 必须通过 sprite helper 绘制 PNG，而不是只用 Canvas 几何图形和 emoji。
+- `data.js` 中塔位和航道坐标必须匹配文档中的背景坐标。
+
+### Playwright 视觉验收
+
+- 编码完成后启动本地 HTTP 服务。
+- 用 Playwright 截取桌面视口 `1280x900` 的开始画面和开局后画面。
+- 用 Playwright 截取移动视口 `390x844` 的旋转/适配画面。
+- 截图必须能看到：真实首屏背景、真实战场底图、PNG 建筑、PNG 敌舰/弹头或其可触发初始状态。
 
 ### 部署配置
 

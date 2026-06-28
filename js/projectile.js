@@ -17,6 +17,7 @@ class Projectile {
     this.homing = config.homing || false;
     this.pierce = config.pierce || false;
     this.air = config.air || false;
+    this.spriteKey = config.spriteKey || (this.trail ? 'missile' : this.air ? 'aa' : this.size <= 4 ? 'drone' : 'shell');
 
     // 朝向（用于绘制弹药形状）
     this.angle = 0;
@@ -56,6 +57,9 @@ class Projectile {
 
   draw(ctx) {
     if (!this.alive) return;
+    if (GAME_SPRITES.drawProjectile(ctx, this.spriteKey, this.x, this.y, this.size, this.angle)) {
+      return;
+    }
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);

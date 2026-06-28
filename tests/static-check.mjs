@@ -18,12 +18,20 @@ const css = read('css/style.css');
 const gameJs = read('js/game.js');
 const uiJs = read('js/ui.js');
 const mapJs = read('js/map.js');
+const dataJs = read('js/data.js');
+const towerJs = read('js/tower.js');
+const enemyJs = read('js/enemy.js');
+const projectileJs = read('js/projectile.js');
 
-function readPngSize(path) {
+function readPngSize(path, options = {}) {
   const buffer = readFileSync(path);
   const pngSignature = '89504e470d0a1a0a';
   check(buffer.subarray(0, 8).toString('hex') === pngSignature, `${path} must be a PNG bitmap`);
   if (buffer.length < 24) return { width: 0, height: 0 };
+  const colorType = buffer[25];
+  if (options.alpha) {
+    check(colorType === 4 || colorType === 6, `${path} must include an alpha channel`);
+  }
   return {
     width: buffer.readUInt32BE(16),
     height: buffer.readUInt32BE(20),
@@ -77,7 +85,13 @@ includesAll(css, [
   'body.rotated',
 ], 'css/style.css');
 
-for (const asset of ['assets/hero-command.png', 'assets/battlefield-hormuz.png']) {
+for (const asset of [
+  'assets/hero-command.png',
+  'assets/battlefield-hormuz.png',
+  'assets/sprites/towers.png',
+  'assets/sprites/enemies.png',
+  'assets/sprites/projectiles.png',
+]) {
   check(existsSync(asset), `${asset} missing`);
 }
 
@@ -91,6 +105,24 @@ if (existsSync('assets/battlefield-hormuz.png')) {
   const size = readPngSize('assets/battlefield-hormuz.png');
   check(size.width >= 960, 'assets/battlefield-hormuz.png must be at least 960px wide');
   check(size.height >= 480, 'assets/battlefield-hormuz.png must be at least 480px tall');
+}
+
+if (existsSync('assets/sprites/towers.png')) {
+  const size = readPngSize('assets/sprites/towers.png', { alpha: true });
+  check(size.width >= 576, 'assets/sprites/towers.png must be at least 576px wide');
+  check(size.height >= 96, 'assets/sprites/towers.png must be at least 96px tall');
+}
+
+if (existsSync('assets/sprites/enemies.png')) {
+  const size = readPngSize('assets/sprites/enemies.png', { alpha: true });
+  check(size.width >= 1120, 'assets/sprites/enemies.png must be at least 1120px wide');
+  check(size.height >= 96, 'assets/sprites/enemies.png must be at least 96px tall');
+}
+
+if (existsSync('assets/sprites/projectiles.png')) {
+  const size = readPngSize('assets/sprites/projectiles.png', { alpha: true });
+  check(size.width >= 320, 'assets/sprites/projectiles.png must be at least 320px wide');
+  check(size.height >= 64, 'assets/sprites/projectiles.png must be at least 64px tall');
 }
 
 includesAll(gameJs, [
@@ -117,6 +149,40 @@ includesAll(mapJs, [
   'battlefield-hormuz.png',
   'drawImage',
 ], 'js/map.js');
+
+includesAll(dataJs, [
+  'PATH_START_Y = 170',
+  'PATH_END_Y   = 382',
+  'const towerSlotCoords',
+  '[65, 172]',
+  '[865, 104]',
+], 'js/data.js');
+
+includesAll(towerJs, [
+  'GAME_SPRITES.drawTower',
+  'GAME_SPRITES.drawProjectile',
+], 'js/tower.js');
+
+includesAll(enemyJs, [
+  'GAME_SPRITES.drawEnemy',
+], 'js/enemy.js');
+
+includesAll(projectileJs, [
+  'GAME_SPRITES.drawProjectile',
+], 'js/projectile.js');
+
+check(existsSync('js/assets.js'), 'js/assets.js missing');
+if (existsSync('js/assets.js')) {
+  const assetsJs = read('js/assets.js');
+  includesAll(assetsJs, [
+    'assets/sprites/towers.png',
+    'assets/sprites/enemies.png',
+    'assets/sprites/projectiles.png',
+    'drawTower',
+    'drawEnemy',
+    'drawProjectile',
+  ], 'js/assets.js');
+}
 
 check(existsSync('wrangler.toml'), 'wrangler.toml missing');
 if (existsSync('wrangler.toml')) {

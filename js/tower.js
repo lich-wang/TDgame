@@ -203,27 +203,30 @@ class Tower {
     const icon = this.cfg.icon;
     const size = this.isRadar ? 16 : 14;
     ctx.save();
-    // 底座
-    ctx.fillStyle = '#3a3020';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, size + 2, 0, Math.PI * 2);
-    ctx.fill();
+    const drewSprite = GAME_SPRITES.drawTower(ctx, this.type, this.level, this.x, this.y);
+    if (!drewSprite) {
+      // 底座
+      ctx.fillStyle = '#3a3020';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, size + 2, 0, Math.PI * 2);
+      ctx.fill();
 
-    // 底色
-    const levelColors = ['#6a5a3a', '#8a6a3a', '#aa7a3a'];
-    ctx.fillStyle = levelColors[this.level] || '#6a5a3a';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#f0c05044';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+      // 底色
+      const levelColors = ['#6a5a3a', '#8a6a3a', '#aa7a3a'];
+      ctx.fillStyle = levelColors[this.level] || '#6a5a3a';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#f0c05044';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
-    // 图标
-    ctx.font = `${this.isRadar ? 18 : size + 4}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(icon, this.x, this.y - 1);
+      // 图标
+      ctx.font = `${this.isRadar ? 18 : size + 4}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(icon, this.x, this.y - 1);
+    }
 
     // 等级标记
     ctx.font = '9px sans-serif';
@@ -242,13 +245,16 @@ class Tower {
     if (!this.isMine) return;
     for (const mine of this.minesPlaced) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(mine.x, mine.y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = '#333';
-      ctx.fill();
-      ctx.strokeStyle = '#f0c050';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      const drewMine = GAME_SPRITES.drawProjectile(ctx, 'mine', mine.x, mine.y, 13, 0);
+      if (!drewMine) {
+        ctx.beginPath();
+        ctx.arc(mine.x, mine.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#333';
+        ctx.fill();
+        ctx.strokeStyle = '#f0c050';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
       // 磁性环
       if (mine.range > 0) {
         ctx.beginPath();

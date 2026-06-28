@@ -119,6 +119,12 @@ class Enemy {
     ctx.strokeStyle = '#223';
     ctx.lineWidth = 1;
 
+    if (GAME_SPRITES.drawEnemy(ctx, this.type, this.x, this.y, w, h)) {
+      this._drawStatus(ctx, w);
+      ctx.restore();
+      return;
+    }
+
     if (this.air) {
       // === 小苍蝇：战斗机 ===
       const bx = this.x, by = this.y;
@@ -260,23 +266,24 @@ class Enemy {
     ctx.fillStyle = '#fff';
     ctx.fillText(this.icon, cx + w * 0.3, cy - h * 0.4);
 
-    // === 血条 ===
-    const barW = w;
+    this._drawStatus(ctx, w);
+
+    ctx.restore();
+  }
+
+  _drawStatus(ctx, barW) {
     const barH = 4;
     const barY = this.y - 12;
-    ctx.fillStyle = '#333';
+    ctx.fillStyle = '#162027';
     ctx.fillRect(this.x, barY, barW, barH);
     const hpPct = this.hp / this.maxHp;
     ctx.fillStyle = hpPct > 0.5 ? '#4c4' : hpPct > 0.25 ? '#cc4' : '#c44';
     ctx.fillRect(this.x, barY, barW * hpPct, barH);
 
-    // 减速标记
     if (this.slowAmount > 0) {
       ctx.fillStyle = '#88ccff88';
       ctx.fillRect(this.x, barY - 2, barW, barH + 4);
     }
-
-    ctx.restore();
   }
 
   distTo(x, y) {

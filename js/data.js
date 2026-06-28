@@ -13,7 +13,7 @@ const TOWER_TYPES = {
       { dmg: 12, speed: 0.7, range: 240, name: '波斯拳 II（穿甲）', ap: 5 },
       { dmg: 18, speed: 0.7, range: 270, name: '波斯拳 III（双管）', double: true },
     ],
-    projectile: { color: '#ffa500', size: 4, speed: 8 },
+    projectile: { color: '#ffa500', size: 4, speed: 8, spriteKey: 'shell' },
   },
   missile: {
     name: '窜天猴',
@@ -25,7 +25,7 @@ const TOWER_TYPES = {
       { dmg: 60, speed: 2.5, range: 320, name: '窜天猴 II（增程）', homing: true },
       { dmg: 90, speed: 2.0, range: 380, name: '窜天猴 III（高超）', homing: true, pierce: true },
     ],
-    projectile: { color: '#ff4444', size: 6, speed: 5, trail: true },
+    projectile: { color: '#ff4444', size: 6, speed: 5, trail: true, spriteKey: 'missile' },
   },
   drone: {
     name: '小摩托大队',
@@ -37,7 +37,7 @@ const TOWER_TYPES = {
       { dmg: 7,  speed: 1.5, range: 240, name: '小摩托 II（蜂群）', swarm: 5 },
       { dmg: 10, speed: 1.2, range: 270, name: '小摩托 III（隐身）', swarm: 8, stealth: true },
     ],
-    projectile: { color: '#aaaacc', size: 3, speed: 4 },
+    projectile: { color: '#aaaacc', size: 3, speed: 4, spriteKey: 'drone' },
   },
   mine: {
     name: '铁罐头',
@@ -49,7 +49,7 @@ const TOWER_TYPES = {
       { dmg: 50, range: 60, name: '铁罐头 II（磁性）', contact: true, magnetic: true },
       { dmg: 70, range: 80, name: '铁罐头 III（智能）', contact: true, smart: true },
     ],
-    projectile: { color: '#333', size: 8, speed: 0 },
+    projectile: { color: '#333', size: 8, speed: 0, spriteKey: 'mine' },
   },
   radar: {
     name: '波斯之眼',
@@ -73,7 +73,7 @@ const TOWER_TYPES = {
       { dmg: 15, speed: 0.5, range: 270, name: '拍苍蝇 II（速射）', airOnly: true },
       { dmg: 22, speed: 0.5, range: 300, name: '拍苍蝇 III（双发）', airOnly: true, double: true },
     ],
-    projectile: { color: '#ffcc00', size: 3, speed: 12 },
+    projectile: { color: '#ffcc00', size: 3, speed: 12, spriteKey: 'aa' },
   },
 };
 
@@ -263,9 +263,9 @@ const MAP = {
 // 斜向水道路径（从右上到左下，约 10° 倾斜）
 // 敌人沿此方向行进：[dx=-1, dy=0.173] 每单位像素
 MAP.PATH_START_X = MAP.SPAWN_X;
-MAP.PATH_START_Y = 250;
+MAP.PATH_START_Y = 170;
 MAP.PATH_END_X   = MAP.DESPAWN_X;
-MAP.PATH_END_Y   = 430;
+MAP.PATH_END_Y   = 382;
 // 归一化方向向量
 (function() {
   const dx = MAP.PATH_END_X - MAP.PATH_START_X;
@@ -276,22 +276,29 @@ MAP.PATH_END_Y   = 430;
 })();
 // 油轮反向：从波斯港（左下）到外海（右上）
 MAP.OIL_PATH_START_X = MAP.DESPAWN_X + 30;
-MAP.OIL_PATH_START_Y = MAP.PATH_END_Y - 30;
+MAP.OIL_PATH_START_Y = MAP.PATH_END_Y + 24;
 MAP.OIL_PATH_END_X   = MAP.SPAWN_X;
-MAP.OIL_PATH_END_Y   = MAP.PATH_START_Y + 20;
+MAP.OIL_PATH_END_Y   = MAP.PATH_START_Y + 36;
 
 MAP.MINE_SLOTS = [];  // 水道中的水雷专用槽位
 
 // 生成防御塔位（海岸线，1行×8列）
 (function initTowerSlots() {
-  const cols = 8;
-  const startX = 50;
-  const startY = 175;   // SHORE_Y=200，紧贴海岸线下方
-  const gapX = 110;
-  for (let c = 0; c < cols; c++) {
+  const towerSlotCoords = [
+    [65, 172],
+    [175, 154],
+    [290, 139],
+    [405, 128],
+    [520, 118],
+    [635, 109],
+    [750, 104],
+    [865, 104],
+  ];
+  for (let c = 0; c < towerSlotCoords.length; c++) {
+    const [x, y] = towerSlotCoords[c];
     MAP.TOWER_SLOTS.push({
-      x: startX + c * gapX,
-      y: startY,
+      x,
+      y,
       occupied: false,
       id: `tower_${c}`,
     });
