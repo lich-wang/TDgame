@@ -33,6 +33,8 @@ const game = new class Game {
 
     // 主动出击定时器
     this._strikeDelayTimer = null;
+    // 下一波定时器
+    this._nextWaveTimer = null;
     // 准备阶段定时器
     this._prepTimer = null;
     // Toast 计时器
@@ -70,6 +72,19 @@ const game = new class Game {
     });
   }
 
+  _getCanvasPoint(e) {
+    if (this._rotated) {
+      return {
+        x: this.canvas.width * (1 - e.offsetY / this.canvas.clientHeight),
+        y: this.canvas.height * (e.offsetX / this.canvas.clientWidth),
+      };
+    }
+    return {
+      x: e.offsetX * (this.canvas.width / this.canvas.clientWidth),
+      y: e.offsetY * (this.canvas.height / this.canvas.clientHeight),
+    };
+  }
+
   // ============ 开始 ============
   start() {
     document.getElementById('start-screen').style.display = 'none';
@@ -85,6 +100,10 @@ const game = new class Game {
     this.spawnTimer = 0;
     this.tankerTimer = 0;
     this._skipWave = false;
+    if (this._nextWaveTimer) {
+      clearTimeout(this._nextWaveTimer);
+      this._nextWaveTimer = null;
+    }
     this.selectedTowerType = null;
     this.hoveredTower = null;
     this.state = 'playing';
@@ -278,27 +297,29 @@ const game = new class Game {
     }
 
     // 放置预览
-    if (this.selectedTowerType && this._lastHoverSlot && !this._lastHoverSlot.occupied) {
-      const s = this._lastHoverSlot;
+    if (this.selectedTowerType) {
       const isMine = this.selectedTowerType === 'mine';
-      const clr = isMine ? 'rgba(80,200,240,0.3)' : 'rgba(240,192,80,0.25)';
-      const strokeClr = isMine ? '#50c8f0' : '#f0c050';
-      const tCfg = TOWER_TYPES[this.selectedTowerType];
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, 20, 0, Math.PI * 2);
-      ctx.fillStyle = clr;
-      ctx.fill();
-      ctx.strokeStyle = strokeClr;
-      ctx.lineWidth = 2;
-      ctx.setLineDash([3, 3]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(tCfg.icon, s.x, s.y);
-      ctx.restore();
+      const s = isMine ? this._lastHoverMineSlot : this._lastHoverSlot;
+      if (s && !s.occupied) {
+        const clr = isMine ? 'rgba(80,200,240,0.3)' : 'rgba(240,192,80,0.25)';
+        const strokeClr = isMine ? '#50c8f0' : '#f0c050';
+        const tCfg = TOWER_TYPES[this.selectedTowerType];
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 20, 0, Math.PI * 2);
+        ctx.fillStyle = clr;
+        ctx.fill();
+        ctx.strokeStyle = strokeClr;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([3, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = '20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(tCfg.icon, s.x, s.y);
+        ctx.restore();
+      }
     }
 
     // === 塔悬停 tooltip ===
@@ -478,7 +499,9 @@ const game = new class Game {
     this.setNews('📢 鹰酱舰队暂时撤退... 下一波正在路上');
 
     // 用 setTimeout 避免 state 切换阻塞 update 循环
-    setTimeout(() => {
+    if (this._nextWaveTimer) clearTimeout(this._nextWaveTimer);
+    this._nextWaveTimer = setTimeout(() => {
+      this._nextWaveTimer = null;
       if (this.state === 'playing') {
         this._startNextWave();
       }
@@ -507,6 +530,28 @@ const game = new class Game {
   }
 
   // ============ 塔操作 ============
+  _getDefaultAffordableTower() {
+    const types = ['cannon', 'missile', 'drone', 'radar', 'aa'];
+    const infl = this.economy.getInflationMultiplier();
+    return types.find(tKey => this.economy.money >= Math.floor(TOWER_TYPES[tKey].cost * infl)) || null;
+  }
+
+  _placeTower(typeKey, slot) {
+    if (!typeKey || !slot || slot.occupied) return false;
+    const cost = Math.floor(TOWER_TYPES[typeKey].cost * this.economy.getInflationMultiplier());
+    if (!this.economy.spend(cost)) {
+      this.showToast('绿纸不足！');
+      this.selectedTowerType = null;
+      return false;
+    }
+    slot.occupied = true;
+    const tower = new Tower(typeKey, slot);
+    this.towers.push(tower);
+    this.showToast(`部署了 ${tower.name}（${tower.cfg.icon}）`);
+    this.selectedTowerType = null;
+    return true;
+  }
+
   selectTowerType(typeKey) {
     if (this.state !== 'playing') return;
     const cost = Math.floor(TOWER_TYPES[typeKey].cost * this.economy.getInflationMultiplier());
@@ -523,17 +568,7 @@ const game = new class Game {
   }
 
   _onMouseMove(e) {
-    let mx, my;
-    if (this._rotated) {
-      // 旋转90°后：视觉 offsetX→Canvas y，视觉 offsetY→Canvas x(反向)
-      mx = MAP.WIDTH * (1 - e.offsetY / this.canvas.clientHeight);
-      my = MAP.HEIGHT * (e.offsetX / this.canvas.clientWidth);
-    } else {
-      const sx = this.canvas.width / this.canvas.clientWidth;
-      const sy = this.canvas.height / this.canvas.clientHeight;
-      mx = e.offsetX * sx;
-      my = e.offsetY * sy;
-    }
+    const { x: mx, y: my } = this._getCanvasPoint(e);
     this.mouseX = mx;
     this.mouseY = my;
 
@@ -594,20 +629,15 @@ const game = new class Game {
   }
 
   _onClick(e) {
-    let mx, my;
-    if (this._rotated) {
-      mx = MAP.WIDTH * (1 - e.offsetY / this.canvas.clientHeight);
-      my = MAP.HEIGHT * (e.offsetX / this.canvas.clientWidth);
-    } else {
-      const sx = this.canvas.width / this.canvas.clientWidth;
-      const sy = this.canvas.height / this.canvas.clientHeight;
-      mx = e.offsetX * sx;
-      my = e.offsetY * sy;
-    }
+    this._onMouseMove(e);
 
     // 点击水雷槽位 → 自动选铁罐头
     if (this._lastHoverMineSlot && !this._lastHoverMineSlot.occupied) {
-      if (!this.selectedTowerType || this.selectedTowerType !== 'mine') {
+      if (this.selectedTowerType === 'mine') {
+        this._placeTower(this.selectedTowerType, this._lastHoverMineSlot);
+        return;
+      }
+      if (!this.selectedTowerType) {
         const cost = Math.floor(TOWER_TYPES.mine.cost * this.economy.getInflationMultiplier());
         if (this.economy.money < cost) {
           this.showToast('绿纸不足，买不了铁罐头！');
@@ -624,35 +654,23 @@ const game = new class Game {
     if (this._lastHoverSlot && !this._lastHoverSlot.occupied) {
       // 未选塔 → 自动选第一个可负担的
       if (!this.selectedTowerType) {
-        const types = ['cannon', 'missile', 'drone', 'mine', 'radar', 'aa'];
-        const infl = this.economy.getInflationMultiplier();
-        for (const tKey of types) {
-          const cost = Math.floor(TOWER_TYPES[tKey].cost * infl);
-          if (this.economy.money >= cost) {
-            this.selectedTowerType = tKey;
-            const tCfg = TOWER_TYPES[tKey];
-            this.showToast(`已选择 ${tCfg.name}，再点空位放置`);
-            this.setNews(`📋 ${tCfg.icon} ${tCfg.name}：${tCfg.desc} | 射程${tCfg.levels[0].range} | 再点空位放置 | 右键取消`);
-            return;
-          }
+        const tKey = this._getDefaultAffordableTower();
+        if (tKey) {
+          this.selectedTowerType = tKey;
+          const tCfg = TOWER_TYPES[tKey];
+          this.showToast(`已选择 ${tCfg.name}，再点空位放置`);
+          this.setNews(`📋 ${tCfg.icon} ${tCfg.name}：${tCfg.desc} | 射程${tCfg.levels[0].range} | 再点空位放置 | 右键取消`);
+          return;
         }
         this.showToast('绿纸不足，建不了任何塔！');
         return;
       }
 
-      const tKey = this.selectedTowerType;
-      const cost = Math.floor(TOWER_TYPES[tKey].cost * this.economy.getInflationMultiplier());
-      if (this.economy.spend(cost)) {
-        const slot = this._lastHoverSlot;
-        slot.occupied = true;
-        const tower = new Tower(tKey, slot);
-        this.towers.push(tower);
-        this.showToast(`部署了 ${tower.name}（${tower.cfg.icon}）`);
-        this.selectedTowerType = null;
-      } else {
-        this.showToast('绿纸不足！');
-        this.selectedTowerType = null;
+      if (this.selectedTowerType === 'mine') {
+        this.showToast('铁罐头只能部署在蓝色水雷槽位');
+        return;
       }
+      this._placeTower(this.selectedTowerType, this._lastHoverSlot);
       return;
     }
 
@@ -701,6 +719,10 @@ const game = new class Game {
 
   addWaveDelay(ms) {
     // 用 setTimeout 异步延迟下一波，不阻塞主循环
+    if (this._nextWaveTimer) {
+      clearTimeout(this._nextWaveTimer);
+      this._nextWaveTimer = null;
+    }
     if (this._strikeDelayTimer) clearTimeout(this._strikeDelayTimer);
     this._strikeDelayTimer = setTimeout(() => {
       this._strikeDelayTimer = null;
@@ -756,6 +778,7 @@ const game = new class Game {
     // 清除所有定时器
     if (this._prepTimer) { clearTimeout(this._prepTimer); this._prepTimer = null; }
     if (this._strikeDelayTimer) { clearTimeout(this._strikeDelayTimer); this._strikeDelayTimer = null; }
+    if (this._nextWaveTimer) { clearTimeout(this._nextWaveTimer); this._nextWaveTimer = null; }
     // 重新开始
     document.getElementById('start-screen').style.display = 'flex';
     this.state = 'menu';

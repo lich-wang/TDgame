@@ -1,0 +1,15 @@
+{
+  "name": "tdgame",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check:js": "node scripts/check-js.mjs",
+    "test": "node tests/static-check.mjs",
+    "verify": "npm run check:js && npm test && npm run build"
+  },
+  "devDependencies": {
+    "wrangler": "^4.22.0"
+  }
+}

@@ -1,0 +1,9 @@
+.env
+.env.local
+.dev.vars
+.wrangler
+.wrangler-dry-run
+node_modules
+dist
+npm-debug.log*
+.DS_Store

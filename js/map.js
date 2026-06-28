@@ -53,6 +53,21 @@ function drawMap(ctx, gameState) {
   ctx.fillStyle = waterGrad;
   ctx.fillRect(0, MAP.WATER_TOP, W, MAP.WATER_BOT - MAP.WATER_TOP);
 
+  // 战区水面光带
+  const laneGrad = ctx.createLinearGradient(MAP.PATH_START_X, MAP.PATH_START_Y, MAP.PATH_END_X, MAP.PATH_END_Y);
+  laneGrad.addColorStop(0, 'rgba(255,95,80,0.22)');
+  laneGrad.addColorStop(0.5, 'rgba(240,192,80,0.12)');
+  laneGrad.addColorStop(1, 'rgba(80,200,240,0.16)');
+  ctx.save();
+  ctx.lineWidth = 64;
+  ctx.strokeStyle = laneGrad;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(MAP.PATH_START_X, MAP.PATH_START_Y);
+  ctx.lineTo(MAP.PATH_END_X, MAP.PATH_END_Y);
+  ctx.stroke();
+  ctx.restore();
+
   // 水面波纹
   ctx.strokeStyle = 'rgba(255,255,255,0.06)';
   ctx.lineWidth = 1;
@@ -74,6 +89,22 @@ function drawMap(ctx, gameState) {
   ctx.lineTo(MAP.PATH_END_X, MAP.PATH_END_Y);
   ctx.stroke();
   ctx.setLineDash([]);
+  // 舰队方向箭头
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,210,120,0.52)';
+  for (let i = 0; i < 5; i++) {
+    const t = 0.16 + i * 0.16 + (gameState.waveOffset % 120) / 900;
+    const px = MAP.PATH_START_X + (MAP.PATH_END_X - MAP.PATH_START_X) * (t % 0.94);
+    const py = MAP.PATH_START_Y + (MAP.PATH_END_Y - MAP.PATH_START_Y) * (t % 0.94);
+    ctx.beginPath();
+    ctx.moveTo(px - 10, py);
+    ctx.lineTo(px + 8, py - 8);
+    ctx.lineTo(px + 4, py);
+    ctx.lineTo(px + 8, py + 8);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
   // 油轮航道（虚线、不同颜色）
   ctx.strokeStyle = 'rgba(200,180,100,0.1)';
   ctx.setLineDash([10, 25]);
@@ -117,6 +148,17 @@ function drawMap(ctx, gameState) {
   ctx.font = '10px sans-serif';
   ctx.fillText('🛢️ 波斯港', 10, MAP.SHORE_Y + 22);
 
+  // 指挥标尺
+  ctx.fillStyle = 'rgba(6,12,18,0.72)';
+  ctx.fillRect(100, 12, 236, 28);
+  ctx.strokeStyle = 'rgba(240,192,80,0.34)';
+  ctx.strokeRect(100, 12, 236, 28);
+  ctx.fillStyle = '#f0c050';
+  ctx.font = 'bold 11px "Noto Sans SC", sans-serif';
+  ctx.fillText('黄金水道 / 防区 01', 112, 30);
+  ctx.fillStyle = '#80d0c8';
+  ctx.fillText('雷达链在线', 232, 30);
+
   // === 防御塔位（金色） ===
   const pulse = Math.sin(Date.now() / 800) * 0.3 + 0.7;
   for (const slot of MAP.TOWER_SLOTS) {
@@ -125,6 +167,11 @@ function drawMap(ctx, gameState) {
       ctx.fillStyle = `rgba(240,192,80,${0.1 * pulse})`;
       ctx.beginPath();
       ctx.arc(slot.x, slot.y, 24, 0, Math.PI * 2);
+      ctx.fill();
+      // 投影底座
+      ctx.fillStyle = 'rgba(20,18,12,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(slot.x, slot.y + 11, 24, 8, 0, 0, Math.PI * 2);
       ctx.fill();
       // 实心内圈
       ctx.fillStyle = `rgba(240,192,80,${0.18 * pulse})`;
