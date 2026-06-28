@@ -10,6 +10,9 @@ class Tower {
     this.slot = slot;
     this.x = slot.x;
     this.y = slot.y;
+    this.drawX = slot.drawX || slot.x;
+    this.drawY = slot.drawY || slot.y;
+    this.drawScale = slot.scale || 0.5;
 
     const lv = this.cfg.levels[this.level];
     this.dmg = lv.dmg || 0;
@@ -21,6 +24,7 @@ class Tower {
 
     // 攻击计时器
     this.cooldown = 0;
+    this.aimAngle = -0.16;
     // 水雷已放置
     this.minesPlaced = [];
     this.maxMines = typeKey === 'mine' ? 3 : 0;
@@ -135,6 +139,7 @@ class Tower {
 
     const target = this.findTarget(enemies);
     if (!target) return;
+    this.aimAngle = this._targetAngle(target);
 
     // 发射投影物
     const pcfg = this.cfg.projectile;
@@ -151,8 +156,8 @@ class Tower {
           Math.floor(Math.random() * enemies.filter(e => e.alive && !e.air).length)
         ];
         if (spreadTarget) {
-          const px = this.x + (Math.random() - 0.5) * 20;
-          const py = this.y + (Math.random() - 0.5) * 20;
+          const px = this.drawX + (Math.random() - 0.5) * 20;
+          const py = this.drawY + (Math.random() - 0.5) * 20;
           projectiles.push(new Projectile(px, py, spreadTarget, this.dmg, {
             ...pcfg,
             homing: true,
@@ -163,15 +168,35 @@ class Tower {
     }
     // 双管
     else if (lv.double) {
-      projectiles.push(new Projectile(this.x - 4, this.y, target, this.dmg, { ...pcfg, homing: isHoming }));
-      projectiles.push(new Projectile(this.x + 4, this.y, target, this.dmg, { ...pcfg, homing: isHoming }));
+      const left = this._firePoint(-5);
+      const right = this._firePoint(5);
+      projectiles.push(new Projectile(left.x, left.y, target, this.dmg, { ...pcfg, homing: isHoming }));
+      projectiles.push(new Projectile(right.x, right.y, target, this.dmg, { ...pcfg, homing: isHoming }));
     }
     // 普通
     else {
-      projectiles.push(new Projectile(this.x, this.y, target, this.dmg, { ...pcfg, homing: isHoming }));
+      const muzzle = this._firePoint(0);
+      projectiles.push(new Projectile(muzzle.x, muzzle.y, target, this.dmg, { ...pcfg, homing: isHoming }));
     }
 
     this.cooldown = this.attackSpeed;
+  }
+
+  _targetAngle(target) {
+    return Math.atan2(
+      target.y + target.height / 2 - this.drawY,
+      target.x + target.width / 2 - this.drawX
+    );
+  }
+
+  _firePoint(sideOffset) {
+    const forward = this.type === 'missile' || this.type === 'aa' ? 26 : 22;
+    const nx = -Math.sin(this.aimAngle);
+    const ny = Math.cos(this.aimAngle);
+    return {
+      x: this.drawX + Math.cos(this.aimAngle) * forward + nx * sideOffset,
+      y: this.drawY + Math.sin(this.aimAngle) * forward + ny * sideOffset,
+    };
   }
 
   draw(ctx) {
@@ -179,7 +204,7 @@ class Tower {
     ctx.save();
     if (this.range > 0 && this.hovered) {
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+      ctx.arc(this.drawX, this.drawY, this.range, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(240,192,80,0.3)';
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
@@ -190,7 +215,7 @@ class Tower {
     // 雷达范围
     if (this.isRadar && this.revealRange > 0 && this.hovered) {
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.revealRange, 0, Math.PI * 2);
+      ctx.arc(this.drawX, this.drawY, this.revealRange, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(80,200,80,0.25)';
       ctx.lineWidth = 1;
       ctx.setLineDash([8, 6]);
@@ -203,7 +228,11 @@ class Tower {
     const icon = this.cfg.icon;
     const size = this.isRadar ? 16 : 14;
     ctx.save();
-    const drewSprite = GAME_SPRITES.drawTower(ctx, this.type, this.level, this.x, this.y);
+    const drewSprite = GAME_SPRITES.drawTower(ctx, this.type, this.level, this.drawX, this.drawY, {
+      scale: this.drawScale,
+      turretAngle: this.aimAngle,
+      yOffset: -12,
+    });
     if (!drewSprite) {
       // 底座
       ctx.fillStyle = '#3a3020';
@@ -287,6 +316,7 @@ class Minelayer {
     this.routeEnd = this._pointOnRoute(82, -20);
     this.x = this.routeStart.x - this.width / 2;
     this.y = this.routeStart.y - this.height / 2;
+    this.headingAngle = Math.atan2(this.routeEnd.y - this.routeStart.y, this.routeEnd.x - this.routeStart.x);
     this.mineTimer = 0.2;
     this.mineInterval = 1.35;
     this.hitFlash = 0;
@@ -346,10 +376,16 @@ class Minelayer {
       this.x = tx;
       this.y = ty;
       this.routeForward = !this.routeForward;
+      const nextTarget = this.routeForward ? this.routeEnd : this.routeStart;
+      this.headingAngle = Math.atan2(
+        nextTarget.y - this.height / 2 - this.y,
+        nextTarget.x - this.width / 2 - this.x
+      );
       this.status = this.minesPlaced.length >= this.maxMines ? '巡航警戒' : '转向布雷';
       return;
     }
 
+    this.headingAngle = Math.atan2(dy, dx);
     this.x += (dx / dist) * step;
     this.y += (dy / dist) * step;
     this.status = this.minesPlaced.length >= this.maxMines ? '巡航警戒' : '布雷中';
@@ -439,7 +475,7 @@ class Minelayer {
 
     const cx = this.centerX;
     const cy = this.centerY;
-    const angle = Math.atan2(MAP.PATH_DY, MAP.PATH_DX) + (this.routeForward ? 0 : Math.PI);
+    const angle = this.headingAngle + Math.PI;
 
     ctx.save();
     ctx.translate(cx, cy + 12);

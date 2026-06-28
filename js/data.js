@@ -282,26 +282,29 @@ MAP.OIL_PATH_END_Y   = MAP.PATH_START_Y + 36;
 
 MAP.MINE_SLOTS = [];  // 水道中的水雷专用槽位
 
-// 生成防御塔位（海岸线，1行×8列）
+// 生成防御塔位：每个点都贴合背景图上的真实岸防平台。
 (function initTowerSlots() {
   const towerSlotCoords = [
-    [24, 176],
-    [82, 158],
-    [151, 145],
-    [234, 130],
-    [323, 119],
-    [421, 105],
-    [519, 98],
-    [617, 88],
-    [719, 78],
-    [818, 76],
-    [912, 72],
+    { x: 28, y: 178, drawX: 25, drawY: 169, scale: 0.43 },
+    { x: 84, y: 164, drawX: 82, drawY: 157, scale: 0.47 },
+    { x: 155, y: 150, drawX: 153, drawY: 144, scale: 0.5 },
+    { x: 246, y: 132, drawX: 244, drawY: 127, scale: 0.5 },
+    { x: 348, y: 120, drawX: 347, drawY: 115, scale: 0.49 },
+    { x: 442, y: 110, drawX: 441, drawY: 105, scale: 0.47 },
+    { x: 535, y: 100, drawX: 535, drawY: 96, scale: 0.46 },
+    { x: 636, y: 88, drawX: 635, drawY: 84, scale: 0.45 },
+    { x: 734, y: 78, drawX: 733, drawY: 75, scale: 0.43 },
+    { x: 835, y: 74, drawX: 834, drawY: 72, scale: 0.42 },
+    { x: 915, y: 72, drawX: 914, drawY: 70, scale: 0.4 },
   ];
   for (let c = 0; c < towerSlotCoords.length; c++) {
-    const [x, y] = towerSlotCoords[c];
+    const { x, y, drawX, drawY, scale } = towerSlotCoords[c];
     MAP.TOWER_SLOTS.push({
       x,
       y,
+      drawX,
+      drawY,
+      scale,
       occupied: false,
       id: `tower_${c}`,
     });

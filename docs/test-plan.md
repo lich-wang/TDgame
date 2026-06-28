@@ -50,6 +50,9 @@
 - `data.js` 中塔位和航道坐标必须匹配文档中的背景坐标。
 - `data.js` 中塔位必须使用 11 个背景平台坐标，不得保留旧的 8 个直线排布坐标。
 - 静态测试必须解析 `towerSlotCoords`，检查塔位数量、关键坐标、非直线排布，以及所有塔位都位于 `MAP.WATER_TOP` 以上。
+- 每个 `towerSlotCoords` 条目必须包含 `x/y/drawX/drawY/scale`，避免点击中心和建筑贴图锚点混用导致压水。
+- `tower.js` 必须记录 `aimAngle`，攻击时更新目标方向，绘制时传入 sprite helper；布雷艇必须用实际移动向量 `headingAngle` 绘制。
+- `assets.js` 必须包含 `projectileAngleOffsets`，让导弹/防空/炮弹按源图默认朝向修正后再旋转。
 - `data.js` 中 `mine` 的展示名称必须是布雷艇，描述必须表达移动布雷。
 
 ### Playwright 视觉验收

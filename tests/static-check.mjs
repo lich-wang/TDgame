@@ -169,24 +169,42 @@ includesAll(dataJs, [
   'PATH_START_Y = 170',
   'PATH_END_Y   = 382',
   'const towerSlotCoords',
-  '[24, 176]',
-  '[912, 72]',
+  'x: 28',
+  'x: 915',
+  'drawX',
+  'drawY',
+  'scale',
   "name: '布雷艇'",
 ], 'js/data.js');
 
 const towerCoordsMatch = dataJs.match(/const towerSlotCoords = \[([\s\S]*?)\];/);
 check(Boolean(towerCoordsMatch), 'js/data.js must define towerSlotCoords as a literal array');
 if (towerCoordsMatch) {
-  const coordMatches = [...towerCoordsMatch[1].matchAll(/\[(\d+),\s*(\d+)\]/g)];
-  const coords = coordMatches.map((match) => [Number(match[1]), Number(match[2])]);
+  const objectMatches = [...towerCoordsMatch[1].matchAll(/\{([\s\S]*?)\}/g)];
+  const coords = objectMatches.map((match) => {
+    const body = match[1];
+    const get = (key) => {
+      const value = body.match(new RegExp(`${key}:\\s*(\\d+(?:\\.\\d+)?)`));
+      return value ? Number(value[1]) : null;
+    };
+    return {
+      x: get('x'),
+      y: get('y'),
+      drawX: get('drawX'),
+      drawY: get('drawY'),
+      scale: get('scale'),
+    };
+  });
   check(coords.length === 11, 'towerSlotCoords must contain 11 background platform slots');
-  check(!coords.some(([x, y]) => x === 65 && y === 172), 'towerSlotCoords must not keep old straight-line slot [65, 172]');
-  check(!coords.some(([x, y]) => x === 865 && y === 104), 'towerSlotCoords must not keep old straight-line slot [865, 104]');
-  check(coords.every(([, y]) => y < 190), 'towerSlotCoords must stay on shoreline platforms, not in the water');
+  check(coords.every((coord) => coord.x != null && coord.y != null && coord.drawX != null && coord.drawY != null && coord.scale != null),
+    'each tower slot must include x/y/drawX/drawY/scale');
+  check(!coords.some(({ x, y }) => x === 65 && y === 172), 'towerSlotCoords must not keep old straight-line slot [65, 172]');
+  check(!coords.some(({ x, y }) => x === 865 && y === 104), 'towerSlotCoords must not keep old straight-line slot [865, 104]');
+  check(coords.every(({ y, drawY }) => y < 190 && drawY < 190), 'towerSlotCoords must stay on shoreline platforms, not in the water');
   const slopes = [];
   for (let i = 1; i < coords.length; i++) {
-    const [x0, y0] = coords[i - 1];
-    const [x1, y1] = coords[i];
+    const { x: x0, y: y0 } = coords[i - 1];
+    const { x: x1, y: y1 } = coords[i];
     slopes.push(Number(((y1 - y0) / (x1 - x0)).toFixed(3)));
   }
   check(new Set(slopes).size >= 5, 'towerSlotCoords must follow irregular platform positions, not a single straight line');
@@ -198,6 +216,8 @@ includesAll(towerJs, [
   'class Minelayer',
   'takeDamage(dmg)',
   'layMine',
+  'aimAngle',
+  'headingAngle',
 ], 'js/tower.js');
 
 includesAll(enemyJs, [
@@ -217,6 +237,8 @@ if (existsSync('js/assets.js')) {
     'assets/sprites/towers.png',
     'assets/sprites/enemies.png',
     'assets/sprites/projectiles.png',
+    'projectileAngleOffsets',
+    'turretAngle',
     'drawTower',
     'drawEnemy',
     'drawProjectile',

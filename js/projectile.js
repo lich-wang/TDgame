@@ -57,6 +57,7 @@ class Projectile {
 
   draw(ctx) {
     if (!this.alive) return;
+    this._drawSpriteTrail(ctx);
     if (GAME_SPRITES.drawProjectile(ctx, this.spriteKey, this.x, this.y, this.size, this.angle)) {
       return;
     }
@@ -166,6 +167,39 @@ class Projectile {
       ctx.fillRect(-this.size - 8, -1, -8, 2);
     }
 
+    ctx.restore();
+  }
+
+  _drawSpriteTrail(ctx) {
+    if (this.spriteKey === 'mine') return;
+    const trailLength = this.spriteKey === 'missile' ? 46 : this.spriteKey === 'aa' ? 34 : 18;
+    const glow = this.spriteKey === 'missile' ? '#ffb24a' : this.spriteKey === 'aa' ? '#78e1f5' : '#ffd28a';
+    const flicker = 0.75 + Math.sin(this.age * 34) * 0.25;
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    const grad = ctx.createLinearGradient(-trailLength, 0, 0, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.35, `${glow}26`);
+    grad.addColorStop(1, `${glow}cc`);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = this.spriteKey === 'missile' ? 5 : 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-trailLength * flicker, 0);
+    ctx.lineTo(-7, 0);
+    ctx.stroke();
+
+    if (this.spriteKey === 'missile' || this.spriteKey === 'aa') {
+      ctx.fillStyle = this.spriteKey === 'missile' ? 'rgba(255,125,48,0.82)' : 'rgba(255,210,80,0.72)';
+      ctx.beginPath();
+      ctx.moveTo(-9, -3);
+      ctx.lineTo(-20 * flicker, 0);
+      ctx.lineTo(-9, 3);
+      ctx.closePath();
+      ctx.fill();
+    }
     ctx.restore();
   }
 }

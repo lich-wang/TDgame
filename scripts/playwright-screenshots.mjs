@@ -47,10 +47,15 @@ async function scenario(page) {
     game.economy.money = 2000;
     const placements = [
       ['cannon', MAP.TOWER_SLOTS[0]],
-      ['missile', MAP.TOWER_SLOTS[2]],
-      ['drone', MAP.TOWER_SLOTS[4]],
-      ['radar', MAP.TOWER_SLOTS[6]],
-      ['aa', MAP.TOWER_SLOTS[8]],
+      ['missile', MAP.TOWER_SLOTS[1]],
+      ['drone', MAP.TOWER_SLOTS[2]],
+      ['radar', MAP.TOWER_SLOTS[3]],
+      ['aa', MAP.TOWER_SLOTS[4]],
+      ['cannon', MAP.TOWER_SLOTS[5]],
+      ['missile', MAP.TOWER_SLOTS[6]],
+      ['drone', MAP.TOWER_SLOTS[7]],
+      ['radar', MAP.TOWER_SLOTS[8]],
+      ['aa', MAP.TOWER_SLOTS[9]],
       ['cannon', MAP.TOWER_SLOTS[10]],
     ];
     for (const [type, slot] of placements) {
