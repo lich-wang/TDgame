@@ -17,6 +17,18 @@ const html = read('index.html');
 const css = read('css/style.css');
 const gameJs = read('js/game.js');
 const uiJs = read('js/ui.js');
+const mapJs = read('js/map.js');
+
+function readPngSize(path) {
+  const buffer = readFileSync(path);
+  const pngSignature = '89504e470d0a1a0a';
+  check(buffer.subarray(0, 8).toString('hex') === pngSignature, `${path} must be a PNG bitmap`);
+  if (buffer.length < 24) return { width: 0, height: 0 };
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20),
+  };
+}
 
 includesAll(html, [
   'id="game-container"',
@@ -56,6 +68,7 @@ for (const script of expectedScripts) {
 includesAll(css, [
   '.start-panel',
   '.start-metrics',
+  'assets/hero-command.png',
   '#ops-strip',
   '#wave-meter',
   '#wave-progress',
@@ -63,6 +76,22 @@ includesAll(css, [
   '.tower-btn.disabled',
   'body.rotated',
 ], 'css/style.css');
+
+for (const asset of ['assets/hero-command.png', 'assets/battlefield-hormuz.png']) {
+  check(existsSync(asset), `${asset} missing`);
+}
+
+if (existsSync('assets/hero-command.png')) {
+  const size = readPngSize('assets/hero-command.png');
+  check(size.width >= 1200, 'assets/hero-command.png must be at least 1200px wide');
+  check(size.height >= 700, 'assets/hero-command.png must be at least 700px tall');
+}
+
+if (existsSync('assets/battlefield-hormuz.png')) {
+  const size = readPngSize('assets/battlefield-hormuz.png');
+  check(size.width >= 960, 'assets/battlefield-hormuz.png must be at least 960px wide');
+  check(size.height >= 480, 'assets/battlefield-hormuz.png must be at least 480px tall');
+}
 
 includesAll(gameJs, [
   '_getCanvasPoint',
@@ -83,6 +112,11 @@ includesAll(uiJs, [
   'selected-display',
   'wave-progress',
 ], 'js/ui.js');
+
+includesAll(mapJs, [
+  'battlefield-hormuz.png',
+  'drawImage',
+], 'js/map.js');
 
 check(existsSync('wrangler.toml'), 'wrangler.toml missing');
 if (existsSync('wrangler.toml')) {

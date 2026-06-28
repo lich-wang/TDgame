@@ -393,8 +393,9 @@ body {
   align-items: center;
   padding: 22px;
   background:
-    linear-gradient(rgba(5, 10, 14, 0.44), rgba(5, 10, 14, 0.78)),
-    radial-gradient(circle at 52% 54%, rgba(38, 128, 150, 0.45), transparent 32%),
+    linear-gradient(rgba(5, 10, 14, 0.24), rgba(5, 10, 14, 0.72)),
+    radial-gradient(circle at 52% 54%, rgba(38, 128, 150, 0.25), transparent 32%),
+    url('../assets/hero-command.png') center / cover no-repeat,
     linear-gradient(145deg, #0d2c38, #181d25 52%, #3a1f14);
   z-index: 300;
 }
@@ -402,7 +403,8 @@ body {
 .start-panel {
   width: min(92vw, 560px);
   padding: clamp(22px, 5vw, 44px);
-  background: rgba(5, 11, 16, 0.72);
+  background: rgba(5, 11, 16, 0.62);
+  backdrop-filter: blur(10px) saturate(1.15);
   border: 1px solid rgba(246, 211, 138, 0.42);
   border-radius: 8px;
   box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);

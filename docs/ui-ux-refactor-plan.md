@@ -7,6 +7,7 @@
 ## 范围
 
 - 重构开始画面，使首屏具备游戏主题、局势信息和明确行动入口。
+- 使用真实位图资产替代纯 CSS 氛围背景，至少包含一张首屏背景图和一张战场底图。
 - 重构顶部 HUD，使波次、绿纸、油轮、声望更易扫描。
 - 增加战况状态条，展示当前态势、波次进度和当前选中设施。
 - 优化底部塔/主动出击按钮，提升移动端可点性和禁用状态可读性。
@@ -32,6 +33,8 @@
 ## 验收标准
 
 - `index.html` 首屏不再依赖内联段落样式，开始画面包含标题、状态摘要和主按钮。
+- `assets/` 下存在可部署的真实图片资产，首屏背景图由 CSS 引用，战场底图由 Canvas 预加载并绘制。
+- 图片资产不得只留在本机生成目录，必须保存进仓库并随 Worker 静态资源部署。
 - HUD 的 `wave-info`、`money-display`、`oil-ship-count`、`rep-display` 仍由 `updateUI()` 正常刷新。
 - 新增的 `condition-display`、`selected-display`、`wave-progress` 在游戏运行中有实际状态更新。
 - 选择水雷后点击蓝色水雷槽位可以部署水雷塔，并占用对应水雷槽。
@@ -57,3 +60,4 @@
 - 当前仓库是 `/home/linux/TD/game`，外层 `/home/linux/TD` 也有 Git 仓库和 `.env`，后续提交必须固定在内层仓库。
 - 当前 token 能部署 Worker，但查 zone routes/DNS 权限不足；自动部署不依赖 route 查询。
 - GitHub Actions 首次运行可能因 secrets 未设置失败，需要先同步本地 `.env` 中的 secret 到 GitHub 仓库。
+- 生成图片可能包含不准确文字或水印，因此项目图片提示词要求无文字、无 logo、无水印；界面文字仍由 HTML/Canvas 绘制。

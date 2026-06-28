@@ -20,6 +20,14 @@
 
 - CSS 必须定义开始面板、HUD、战况条、底部按钮、禁用状态和竖屏旋转相关选择器。
 - CSS 不应使用纯单色背景承载整个体验，应包含 Canvas 容器、HUD 和控件的分层样式。
+- CSS 必须引用真实首屏背景图片资产。
+
+### 图片资产
+
+- 必须存在 `assets/hero-command.png` 和 `assets/battlefield-hormuz.png`。
+- 图片必须是 PNG 或 WebP 位图文件，不允许用 SVG 代替。
+- 图片尺寸必须足够承担 UI 背景：首屏背景宽度至少 1200px，战场底图宽度至少 960px。
+- HTML/CSS/JS 必须引用这些资产，防止图片生成后没有实际接入。
 
 ### JS 语法
 
@@ -30,6 +38,7 @@
 - `game.js` 必须包含统一坐标转换函数，避免 hover 和 click 逻辑重复且不一致。
 - 水雷放置逻辑必须显式使用 `_lastHoverMineSlot` 创建 `Tower('mine', slot)`。
 - UI 更新必须写入 `condition-display`、`selected-display`、`wave-progress`。
+- `map.js` 必须预加载并绘制 `battlefield-hormuz.png`，且图片未加载时保留 Canvas 绘制兜底。
 
 ### 部署配置
 

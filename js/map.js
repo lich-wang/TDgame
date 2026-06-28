@@ -2,15 +2,25 @@
 // 霍尔木兹狂想曲 — 地图绘制
 // ============================================================
 
+const BATTLEFIELD_IMAGE = new Image();
+BATTLEFIELD_IMAGE.src = 'assets/battlefield-hormuz.png';
+
 function drawMap(ctx, gameState) {
   const W = MAP.WIDTH;
   const H = MAP.HEIGHT;
+  const hasBattlefieldImage = BATTLEFIELD_IMAGE.complete && BATTLEFIELD_IMAGE.naturalWidth > 0;
+
+  if (hasBattlefieldImage) {
+    ctx.drawImage(BATTLEFIELD_IMAGE, 0, 0, W, MAP.WATER_BOT);
+    ctx.fillStyle = 'rgba(4, 10, 14, 0.12)';
+    ctx.fillRect(0, 0, W, MAP.WATER_BOT);
+  }
 
   // === 天空 ===
   const skyGrad = ctx.createLinearGradient(0, 0, 0, MAP.SHORE_Y);
-  skyGrad.addColorStop(0, '#1a2a4a');
-  skyGrad.addColorStop(0.5, '#2a4a6a');
-  skyGrad.addColorStop(1, '#5a8aaa');
+  skyGrad.addColorStop(0, hasBattlefieldImage ? 'rgba(26,42,74,0.2)' : '#1a2a4a');
+  skyGrad.addColorStop(0.5, hasBattlefieldImage ? 'rgba(42,74,106,0.12)' : '#2a4a6a');
+  skyGrad.addColorStop(1, hasBattlefieldImage ? 'rgba(90,138,170,0.1)' : '#5a8aaa');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, W, MAP.SHORE_Y);
 
@@ -24,12 +34,12 @@ function drawMap(ctx, gameState) {
 
   // === 海岸线区域 ===
   // 沙子
-  ctx.fillStyle = '#c4a452';
+  ctx.fillStyle = hasBattlefieldImage ? 'rgba(196,164,82,0.22)' : '#c4a452';
   ctx.fillRect(0, MAP.SHORE_Y - 20, W, 30);
   // 海岸地面
   const shoreGrad = ctx.createLinearGradient(0, MAP.SHORE_Y - 20, 0, MAP.SHORE_Y);
-  shoreGrad.addColorStop(0, '#d4b462');
-  shoreGrad.addColorStop(1, '#8a6a3a');
+  shoreGrad.addColorStop(0, hasBattlefieldImage ? 'rgba(212,180,98,0.28)' : '#d4b462');
+  shoreGrad.addColorStop(1, hasBattlefieldImage ? 'rgba(138,106,58,0.22)' : '#8a6a3a');
   ctx.fillStyle = shoreGrad;
   ctx.fillRect(0, MAP.SHORE_Y - 20, W, 25);
 
@@ -46,10 +56,10 @@ function drawMap(ctx, gameState) {
 
   // === 水道 ===
   const waterGrad = ctx.createLinearGradient(0, MAP.WATER_TOP, 0, MAP.WATER_BOT);
-  waterGrad.addColorStop(0, '#1a4a6a');
-  waterGrad.addColorStop(0.3, '#1a5570');
-  waterGrad.addColorStop(0.7, '#1a4a65');
-  waterGrad.addColorStop(1, '#152d3a');
+  waterGrad.addColorStop(0, hasBattlefieldImage ? 'rgba(26,74,106,0.18)' : '#1a4a6a');
+  waterGrad.addColorStop(0.3, hasBattlefieldImage ? 'rgba(26,85,112,0.12)' : '#1a5570');
+  waterGrad.addColorStop(0.7, hasBattlefieldImage ? 'rgba(26,74,101,0.14)' : '#1a4a65');
+  waterGrad.addColorStop(1, hasBattlefieldImage ? 'rgba(21,45,58,0.2)' : '#152d3a');
   ctx.fillStyle = waterGrad;
   ctx.fillRect(0, MAP.WATER_TOP, W, MAP.WATER_BOT - MAP.WATER_TOP);
 
@@ -116,8 +126,8 @@ function drawMap(ctx, gameState) {
 
   // === 鹰酱基地（底部） ===
   const baseGrad = ctx.createLinearGradient(0, MAP.BASE_Y, 0, H);
-  baseGrad.addColorStop(0, '#2a3a4a');
-  baseGrad.addColorStop(1, '#1a1a2e');
+  baseGrad.addColorStop(0, hasBattlefieldImage ? 'rgba(42,58,74,0.62)' : '#2a3a4a');
+  baseGrad.addColorStop(1, hasBattlefieldImage ? 'rgba(26,26,46,0.7)' : '#1a1a2e');
   ctx.fillStyle = baseGrad;
   ctx.fillRect(0, MAP.BASE_Y, W, H - MAP.BASE_Y);
 
