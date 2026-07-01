@@ -8,3 +8,5 @@ dist
 artifacts
 npm-debug.log*
 .DS_Store
+.deepseek/
+tmp/
